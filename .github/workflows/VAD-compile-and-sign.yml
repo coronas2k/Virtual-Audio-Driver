@@ -37,6 +37,19 @@ jobs:
           
           choco install windowsdriverkit11 -y
           if ($LASTEXITCODE -ne 0) { exit 1 }
+
+      - name: Install WDK Visual Studio Extension
+        run: |
+          $wdkVsix = Get-ChildItem -Path "C:\Program Files (x86)\Windows Kits\10\Vsix\VS2022" -Recurse -Filter "WDK.vsix" | Select-Object -First 1 -ExpandProperty FullName
+          if ($wdkVsix) {
+            Write-Host "Installing WDK VSIX from: $wdkVsix"
+            $vsPath = & "${env:ProgramFiles(x86)}\Microsoft Visual Studio\Installer\vswhere.exe" -latest -products * -property installationPath
+            $vsixInstaller = "$vsPath\Common7\IDE\VSIXInstaller.exe"
+            Write-Host "Using VSIXInstaller: $vsixInstaller"
+            Start-Process -FilePath $vsixInstaller -ArgumentList "/quiet", "/admin", "/force", "`"$wdkVsix`"" -Wait
+          } else {
+            Write-Error "WDK VSIX not found!"
+          }
       
       # Fix the WDK paths for InfVerif if needed - only for x64 builds
       - name: Fix WDK paths for InfVerif
